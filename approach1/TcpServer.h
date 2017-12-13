@@ -14,12 +14,12 @@
 
 #include <sys/select.h>
 #include <strings.h>
-#include <algorithm>
+#include <errno.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <vector>
-using namespace std;
+#include <stdio.h>
 
 struct client_feilds{
     int fd;
@@ -37,7 +37,6 @@ class TcpServer{
         int port_num;
         struct client_operation client_callbacks;
         fd_set read_fds;
-        vector <int> read_fd_vec;
         int max_fd;
         char buf[1024];
     public:
