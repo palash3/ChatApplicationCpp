@@ -1,8 +1,10 @@
 #include "TcpServer.h"
 
 #include <iostream>
-#include <algorithm>
+
 using namespace std;
+#include <errno.h>
+#include <string.h>
 
 
 TcpServer::TcpServer(int port_num){
@@ -33,7 +35,6 @@ int TcpServer::start(){
         return -1;
     }
     max_fd=server_fd;
-    
     read_fd_vec.push_back(server_fd);
 }
 void TcpServer::registerClientCallbacks(struct client_operation * ctr ){
@@ -54,10 +55,18 @@ int TcpServer::acceptClients(){
     }
     int ret =0;
     while(1){
-        
-        FD_SET(server_fd,&read_fds);
-        cout<<"Over select ---------"<<max_fd<<endl;
+        //set all readfds
         int i=0;
+        cout <<"waiting for fds";
+        FD_ZERO(&read_fds);
+        int size = read_fd_vec.size();
+        for(i=0;i<size;i++){
+            cout <<read_fd_vec[i]<<" ";
+            FD_SET(read_fd_vec[i],&read_fds);    
+        }
+        max_fd = *max_element(read_fd_vec.begin(),read_fd_vec.end());
+        cout <<" max fd : "<<max_fd<<endl;
+        cout<<"Over select ---------"<<endl;
         ret = select(max_fd+1,&read_fds,NULL,NULL,NULL);
         cout <<"select call done "<<max_fd << ret<<endl;
         if(ret<0){
@@ -72,12 +81,13 @@ int TcpServer::acceptClients(){
                     //if tris should give me new connection
                     cout<<"Got a client"<<endl;
                     struct sockaddr client_info;
-                    socklen_t client_info_len;
+                    socklen_t client_info_len=0;
+                    bzero(&client_info,sizeof(struct sockaddr));
                     cout<<"Over accept---";
                     ret =accept4(server_fd,&client_info,&client_info_len,SOCK_NONBLOCK);
                     cout<<"out of accept"<<endl;
                     if(ret<0){
-                        cout<<"Accept failed "<<ret<<endl;
+                        cout<<"Accept failed "<<ret<<strerror(errno)<<endl;
                         //  return ret;
                     }else{
                         //Here we have a new client
@@ -100,6 +110,7 @@ int TcpServer::acceptClients(){
                         FD_CLR(fd,&read_fds);
                         client_callbacks.close(fd);
                         ret = close(fd);
+                        read_fd_vec.erase(remove(read_fd_vec.begin(), read_fd_vec.end(),fd), read_fd_vec.end());
                         cout<<"ret of close"<<ret<<endl;
                     }
                     if(ret<0){
