@@ -2,6 +2,7 @@
 
 
 TcpServer::TcpServer(int port_num){
+    printf("in tcp server\n");
     this->port_num = port_num;
     max_fd=0;
     FD_ZERO(&read_fds);
@@ -44,7 +45,8 @@ void TcpServer::registerClientCallbacks(struct client_operation * ctr ){
 
 int TcpServer::acceptClients(){
     int ret =0;
-    FD_SET(server_fd,&read_fds);    
+    FD_SET(server_fd,&read_fds);
+    fd_vec.push_back(server_fd);    
     while(1){
         fd_set tmp_set = read_fds;
         ret = select(max_fd+1,&tmp_set,NULL,NULL,NULL);
@@ -68,6 +70,7 @@ int TcpServer::acceptClients(){
                         int client_fd = ret;
                         client_callbacks.onConnection(client_fd);
                         FD_SET(client_fd,&read_fds);
+                        fd_vec.push_back(client_fd);
                         //this logic should be improved
                         if(client_fd > max_fd){
                             max_fd = client_fd;
@@ -79,6 +82,7 @@ int TcpServer::acceptClients(){
                     if(ret == 0){ // socket is closed
                         FD_CLR(fd,&read_fds);
                         client_callbacks.close(fd);
+                        fd_vec.erase(remove(fd_vec.begin(), fd_vec.end(),fd), fd_vec.end());
                         close(fd);
                     }
                     //should I allocate memory every time I send data , since multiple instances might hurt this implementation
@@ -90,4 +94,16 @@ int TcpServer::acceptClients(){
             }
         }
     }
+}
+
+
+//we can make send non blocking and then return the status respectively
+int TcpServer::sendToClient(int clientId , char* msg , int len){
+    int sent_bytes=0;
+    if(std::find(fd_vec.begin(),fd_vec.end(),clientId) != fd_vec.end()){
+        sent_bytes = send(clientId,msg,len,0);
+    }else{
+        sent_bytes =-1;
+    }
+    return sent_bytes;
 }

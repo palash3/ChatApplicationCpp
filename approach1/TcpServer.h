@@ -9,9 +9,9 @@
 
 #include <unistd.h>
 #include <netinet/ip.h>
-
+#include <algorithm>
+#include <vector>
 #include <sys/types.h>
-
 #include <sys/select.h>
 #include <strings.h>
 #include <errno.h>
@@ -37,13 +37,16 @@ class TcpServer{
         int port_num;
         struct client_operation client_callbacks;
         fd_set read_fds;
+        std::vector <int> fd_vec;
         int max_fd;
         char buf[1024];
     public:
+        TcpServer(){};
         TcpServer(int port_num);
         int start();
         void registerClientCallbacks(struct client_operation * ctr );
         int acceptClients();
+        int sendToClient(int clientId , char* msg , int length);
 };
 
 #endif
