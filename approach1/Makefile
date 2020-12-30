@@ -1,4 +1,4 @@
-all : TcpServer.h TcpServer.cpp main.cpp ChatApplication.h ChatApplication.cpp
+all : main2.cpp TcpServer.h TcpServer.cpp
 	g++ $? -o out
 
 clean : 

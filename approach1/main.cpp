@@ -1,71 +1,63 @@
 #include <iostream>
-using namespace std;
-#include "ChatApplication.h"
 #include "TcpServer.h"
-void onConnection (int client_id);
-void data (int client_id, char * data ,int datalen);
-void close_client (int client_id);
-TcpServer server_obj(9096);
-struct client_operation c_ops={
-    //void (*onConnection)(int client_id);
-    .onConnection=onConnection,
-    //void (*data)(int client_id, char * data ,int datalen);
-    .data=data,
-    //void (*close)(int client_id);
-    .close=close_client
+#include "ChatApplication.h"
+
+using namespace std;
+
+
+class XYZ : public TcpServer
+{   
+    
+    ChatApplication ch;
+
+    public :
+    XYZ(int port_num):TcpServer(port_num){
+        ch = ChatApplication();
+    }
+    int print(){
+        cout<<"Print from XYZ";
+    }
+    void onConnection(int fd){
+        cout<<"Connected "<<fd<<endl;
+        char client_uuid[21];
+        sprintf(client_uuid, "uuid%d", fd);
+        ch.storeInMap(fd,client_uuid);
+        char msg[50];
+        sprintf(msg, "Your name is ->%s",client_uuid);
+        int ret = sendToClient(fd,msg,strlen(msg));
+        cout<<"Name assigned by server"<<client_uuid<<" Return is "<<ret<<endl;
+    } 
+    void onData(int fd, char * data ,int len ){
+        if (len == 0){
+            return;
+        }
+        char *token = strtok(data, ":");
+        if (token == NULL){
+            char msg[50] = "Correct format is username:message";
+            sendToClient(fd,msg,strlen(msg));
+            return;
+        }
+        int client_id = ch.getClientId(token);
+        if (client_id == -1){
+            char msg[50] = "User not found";
+            sendToClient(fd,msg,strlen(msg));
+            return;
+        }
+        char *sent_msg;
+        sent_msg = strtok(data, ":");
+        sendToClient(client_id,sent_msg,strlen(sent_msg));
+    }
+    void onClose(int fd ){
+
+    }
+    
 };
 
-class XYZ{
-public:
-    void onConnection (int client_id){
-        cout<<"Client connected "<<client_id<<endl;
-    }
-    void data (int client_id, char * data ,int datalen){
-        cout<<"Client "<<client_id << data<<datalen<< endl;
-        server_obj.sendToClient(client_id,"OK!",3);
-    }
-    void close_client (int client_id){
-        cout<<"Client CLosed "<<client_id<<endl;
-     }
-      
-};
-
-XYZ temp_obj;
-
-
-
-
-
-ChatApplication chat(2020);
-
-void onConnection(int client_id){
-    cout<<"Client connected "<<client_id<<endl;
-}
-
-void data(int client_id,char *data, int len){
-    cout<<"Client "<<client_id << data<<len<< endl;
-    server_obj.sendToClient(client_id,"OK!",3);
-}
-void close_client(int client_id){
-   cout<<"Client CLosed "<<client_id<<endl;
-}
-
-int main(){
-    struct client_operation temp_c_ops={
-        //void (*onConnection)(int client_id);
-        .onConnection=(void (*)(int))&temp_obj.onConnection,
-        //void (*data)(int client_id, char * data ,int datalen);
-        .data=(void (*)(int, char*, int))&temp_obj.data,
-        //void (*close)(int client_id);
-        .close=(void (*)(int))&temp_obj.close_client
-    };
-    cout <<"Object created"<< endl;
-    server_obj.registerClientCallbacks(&c_ops);
-    cout <<"Registered Callbacks"<< endl;
-    server_obj.start();
-    cout <<"Started obj"<< endl;
-    server_obj.acceptClients();
-    cout <<"Accepting clients"<< endl;
-    while(1);
-    return 0;
+int main (){
+        cout<<"Hello there"<<endl;
+        XYZ z(5001);
+        z.print();
+        z.start();
+        z.acceptClients();
+        return 0;
 }

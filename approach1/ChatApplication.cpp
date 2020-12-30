@@ -1,6 +1,6 @@
 #include "ChatApplication.h"
-
-ChatApplication::ChatApplication(int port_num):server_obj(port_num){
+using namespace std;
+ChatApplication::ChatApplication(){
     //may be backup old usernames
 }
 
@@ -37,9 +37,5 @@ int ChatApplication::removeFromMap(int clientId){
         nameToClientId.erase(nameToClientId.find(name_to_be_deleted));
     }
     return occurences;
-}
-
-int ChatApplication::start(){
-    
 }
 

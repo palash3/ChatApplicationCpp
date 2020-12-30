@@ -21,21 +21,11 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 
-struct client_feilds{
-    int fd;
-    struct client_operation *cops;
-};
-struct client_operation{
-    void (*onConnection)(int );
-    void (*data)(int , char * ,int );
-    void (*close)(int );
-};
 
 class TcpServer{
     private:
         int server_fd;
         int port_num;
-        struct client_operation client_callbacks;
         fd_set read_fds;
         std::vector <int> fd_vec;
         int max_fd;
@@ -44,7 +34,9 @@ class TcpServer{
         TcpServer(){};
         TcpServer(int port_num);
         int start();
-        void registerClientCallbacks(struct client_operation * ctr );
+        virtual void onConnection(int) = 0; 
+        virtual void onData(int , char * ,int )=0;
+        virtual void onClose(int )=0;
         int acceptClients();
         int sendToClient(int clientId , char* msg , int length);
 };

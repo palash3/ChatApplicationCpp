@@ -1,8 +1,6 @@
 #include "TcpServer.h"
-
-
 TcpServer::TcpServer(int port_num){
-    printf("in tcp server\n");
+    // cout<<"in tcp server\n";
     this->port_num = port_num;
     max_fd=0;
     FD_ZERO(&read_fds);
@@ -31,17 +29,6 @@ int TcpServer::start(){
     }
     max_fd=server_fd;
 }
-void TcpServer::registerClientCallbacks(struct client_operation * ctr ){
-    if(ctr->onConnection){
-        client_callbacks.onConnection = ctr->onConnection;
-    }
-    if(ctr->data){
-        client_callbacks.data = ctr->data;
-    }
-    if(ctr->close){
-        client_callbacks.close = ctr->close;
-    }
-}
 
 int TcpServer::acceptClients(){
     int ret =0;
@@ -68,7 +55,7 @@ int TcpServer::acceptClients(){
                     }else{
                         //Here we have a new client
                         int client_fd = ret;
-                        client_callbacks.onConnection(client_fd);
+                        onConnection(client_fd);
                         FD_SET(client_fd,&read_fds);
                         fd_vec.push_back(client_fd);
                         //this logic should be improved
@@ -81,13 +68,13 @@ int TcpServer::acceptClients(){
                     ret = recv(fd,buf,1024,MSG_DONTWAIT);
                     if(ret == 0){ // socket is closed
                         FD_CLR(fd,&read_fds);
-                        client_callbacks.close(fd);
+                        onClose(fd);
                         fd_vec.erase(remove(fd_vec.begin(), fd_vec.end(),fd), fd_vec.end());
                         close(fd);
                     }
                     //should I allocate memory every time I send data , since multiple instances might hurt this implementation
                     if(ret >0){
-                        client_callbacks.data(fd,buf,ret);
+                        onData(fd,buf,ret);
                         bzero(buf,ret+1);   
                     }
                 }
